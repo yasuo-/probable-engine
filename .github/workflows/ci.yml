@@ -1,0 +1,45 @@
+name: CI
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  all-cli-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2-beta
+        with:
+          node-version: 16.x
+          cache: npm
+      - run: mv .env.example .env
+      - run: yarn install
+      - run: yarn build
+      - run: yarn lint
+      - run: yarn check-format
+      - name: Run Tests
+        run: yarn test:coverage -u
+      - name: Upload coverage reports to Codecov
+        run: |
+          curl -Os https://uploader.codecov.io/latest/linux/codecov
+          chmod +x codecov
+          ./codecov -t ${CODECOV_TOKEN}
+
+  cypress-run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2-beta
+        with:
+          node-version: 16.x
+          cache: npm
+      - run: mv .env.example .env
+      - uses: cypress-io/github-action@v4
+        with:
+          build: yarn build
+          start: yarn serve
+          browser: chrome
